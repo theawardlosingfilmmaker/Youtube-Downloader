@@ -1,0 +1,8 @@
+venv/
+__pycache__/
+*.pyc
+downloads/
+.vscode/
+santube.log
+cookies.txt
+cookiesforSantube.txt

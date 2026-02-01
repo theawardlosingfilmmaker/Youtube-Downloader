@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#ff0000">
+    <title>SanTube</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <header>
+        <div class="start-section">
+            <button class="menu-btn" onclick="toggleSidebar()"><i class="fa-solid fa-bars"></i></button>
+            <div class="logo" onclick="location.reload()">
+                <div class="logo-icon"><i class="fa-brands fa-youtube"></i></div>
+                <span class="logo-text">SanTube</span>
+            </div>
+        </div>
+
+        <div class="center-section">
+            <div class="search-bar">
+                <input type="text" id="searchInput" placeholder="Search" autocomplete="off">
+                <button onclick="handleSearch()" class="search-btn">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                </button>
+            </div>
+            <button class="mic-btn"><i class="fa-solid fa-microphone"></i></button>
+        </div>
+
+        <div class="end-section">
+            <button id="updateBtn" class="icon-btn hidden" onclick="performUpdate()" title="Update Available!"
+                style="color: #4caf50;">
+                <i class="fa-solid fa-cloud-arrow-down"></i>
+            </button>
+            <button class="icon-btn" onclick="toggleDownloadsDropdown()">
+                <i class="fa-solid fa-arrow-down"></i>
+                <!-- Optional: Badge for active downloads -->
+                <span id="dlBadge" class="badge hidden">0</span>
+            </button>
+            <div id="downloadsDropdown" class="downloads-dropdown hidden">
+                <div class="dd-header">
+                    <span>Downloads</span>
+                    <button onclick="clearAllDownloads()" class="clear-btn">Clear all</button>
+                </div>
+                <div id="downloadsList" class="dd-list">
+                    <!-- Items go here -->
+                    <div class="empty-state">No recent downloads</div>
+                </div>
+                <div class="dd-footer">
+                    <button onclick="openDownloadsFolder()">Show downloads folder</button>
+                </div>
+            </div>
+
+            <button class="icon-btn" onclick="toggleTheme()" title="Toggle theme">
+                <i id="themeIcon" class="fa-solid fa-moon"></i>
+            </button>
+            <button class="icon-btn"><i class="fa-solid fa-video"></i></button>
+            <button class="icon-btn"><i class="fa-regular fa-bell"></i></button>
+            <div class="profile-icon">S</div>
+        </div>
+    </header>
+
+    <!-- Toast Notification -->
+    <div id="downloadToast" class="download-toast hidden">
+        <div class="toast-content">
+            <i class="fa-solid fa-circle-check" style="color: #4caf50;"></i>
+            <span>Download started...</span>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <!-- Main Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-item active" onclick="loadHomeFeed()">
+                    <i class="fa-solid fa-house"></i>
+                    <span>Home</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-solid fa-bolt"></i>
+                    <!-- YouTube uses a specific Shorts icon, Bolt is a close approximation -->
+                    <span>Shorts</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-brands fa-youtube"></i>
+                    <!-- Subscriptions icon is usually a 'stack' or separate, using Brand for now -->
+                    <span>Subscriptions</span>
+                </div>
+            </div>
+
+            <hr class="sidebar-divider">
+
+            <!-- You Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-heading">
+                    <span>You</span>
+                    <i class="fa-solid fa-chevron-right"></i>
+                </div>
+                <div class="sidebar-item" onclick="openConnectModal()">
+                    <i class="fa-regular fa-user-circle"></i> <!-- Connect Account effectively -->
+                    <span>Your Channel</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-solid fa-clock-rotate-left"></i>
+                    <span>History</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-solid fa-list-ul"></i>
+                    <span>Playlists</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-regular fa-clock"></i>
+                    <span>Watch later</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-regular fa-thumbs-up"></i>
+                    <span>Liked videos</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-solid fa-download"></i>
+                    <span>Downloads</span>
+                </div>
+            </div>
+
+            <hr class="sidebar-divider">
+
+            <!-- Explore Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-heading">Explore</div>
+                <div class="sidebar-item" onclick="performSearch('trending')">
+                    <i class="fa-solid fa-fire"></i>
+                    <span>Trending</span>
+                </div>
+                <div class="sidebar-item" onclick="performSearch('music')">
+                    <i class="fa-solid fa-music"></i>
+                    <span>Music</span>
+                </div>
+                <div class="sidebar-item" onclick="performSearch('gaming')">
+                    <i class="fa-solid fa-gamepad"></i>
+                    <span>Gaming</span>
+                </div>
+                <div class="sidebar-item" onclick="performSearch('news')">
+                    <i class="fa-regular fa-newspaper"></i>
+                    <span>News</span>
+                </div>
+                <div class="sidebar-item" onclick="performSearch('sports')">
+                    <i class="fa-solid fa-trophy"></i>
+                    <span>Sports</span>
+                </div>
+            </div>
+
+            <hr class="sidebar-divider">
+
+            <!-- More Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-heading">More from YouTube</div>
+                <div class="sidebar-item">
+                    <i class="fa-brands fa-youtube" style="color: red;"></i>
+                    <span>YouTube Premium</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-solid fa-circle-play" style="color: red;"></i>
+                    <span>YouTube Music</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-solid fa-child-reaching" style="color: red;"></i>
+                    <span>YouTube Kids</span>
+                </div>
+            </div>
+
+            <hr class="sidebar-divider">
+
+            <!-- Footer Section -->
+            <div class="sidebar-section">
+                <div class="sidebar-item">
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-regular fa-flag"></i>
+                    <span>Report history</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-regular fa-circle-question"></i>
+                    <span>Help</span>
+                </div>
+                <div class="sidebar-item">
+                    <i class="fa-regular fa-comment-dots"></i>
+                    <span>Send feedback</span>
+                </div>
+            </div>
+
+            <div class="sidebar-footer-links">
+                <p>About Press Copyright</p>
+                <p>Contact us Creators Advertise</p>
+                <p>Developers</p>
+                <br>
+                <p style="color: #717171;">© 2026 Google LLC</p>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Categories Header (Scrollable) -->
+            <div class="categories" id="categoriesBar">
+                <button class="category-pill active" onclick="filterCategory('All')">All</button>
+                <button class="category-pill" onclick="filterCategory('Gaming')">Gaming</button>
+                <button class="category-pill" onclick="filterCategory('Music')">Music</button>
+                <button class="category-pill" onclick="filterCategory('Mixes')">Mixes</button>
+                <button class="category-pill" onclick="filterCategory('Live')">Live</button>
+                <button class="category-pill" onclick="filterCategory('Comedy')">Comedy</button>
+                <button class="category-pill" onclick="filterCategory('Programming')">Programming</button>
+                <button class="category-pill" onclick="filterCategory('Lofi')">Lofi</button>
+                <button class="category-pill" onclick="filterCategory('Thrillers')">Thrillers</button>
+                <button class="category-pill" onclick="filterCategory('History')">History</button>
+                <button class="category-pill" onclick="filterCategory('Mathematics')">Mathematics</button>
+                <button class="category-pill" onclick="filterCategory('Trailers')">Trailers</button>
+                <button class="category-pill" onclick="filterCategory('News')">News</button>
+                <button class="category-pill" onclick="filterCategory('Podcasts')">Podcasts</button>
+                <button class="category-pill" onclick="filterCategory('New to you')">New to you</button>
+            </div>
+
+            <!-- Search Results/Feed Grid -->
+            <div id="resultsGrid" class="video-grid">
+                <div class="placeholder-msg">Loading trending videos...</div>
+            </div>
+
+            <!-- NEW Watch Section (Dual Column) -->
+            <div id="watchSection" class="watch-section hidden">
+                <div class="watch-container" id="watchContainer">
+                    <!-- Left: Player & Info -->
+                    <div class="watch-left" id="watchLeft">
+                        <div class="video-player-container" id="playerContainer">
+                            <iframe id="previewPlayer" src="" frameborder="0" allowfullscreen></iframe>
+                        </div>
+
+                        <!-- Top Info -->
+                        <div class="video-primary-info" id="videoInfo">
+                            <h1 class="video-title" id="videoTitle">Loading title...</h1>
+
+                            <div class="video-top-row">
+                                <div class="owner-profile">
+                                    <div class="owner-avatar" id="ownerAvatar">?</div>
+                                    <div class="owner-text">
+                                        <span class="owner-name" id="ownerName">Channel Name</span>
+                                        <span class="owner-subs" id="ownerSubs">1.2M subscribers</span>
+                                    </div>
+                                    <button class="subscribe-btn" id="subscribeBtn"
+                                        onclick="toggleSubscribe()">Subscribe</button>
+                                </div>
+
+                                <div class="video-actions">
+                                    <div class="like-dislike-group">
+                                        <button class="action-btn like-btn" id="likeBtn" onclick="toggleLike()">
+                                            <i class="fa-regular fa-thumbs-up"></i>
+                                            <span id="likeCount">12K</span>
+                                        </button>
+                                        <span class="action-divider"></span>
+                                        <button class="action-btn dislike-btn" id="dislikeBtn"
+                                            onclick="toggleDislike()">
+                                            <i class="fa-regular fa-thumbs-down"></i>
+                                        </button>
+                                    </div>
+                                    <button class="action-btn" onclick="openShareModal()">
+                                        <i class="fa-solid fa-share"></i> Share
+                                    </button>
+                                    <!-- Download Button is the hero feature -->
+                                    <button class="action-btn download-action-btn" id="downloadBtnHero"
+                                        onclick="openDownloadModal()">
+                                        <i class="fa-solid fa-download"></i> Download
+                                    </button>
+                                    <button class="action-btn" onclick="saveToWatchLater()">
+                                        <i class="fa-regular fa-bookmark"></i> Save
+                                    </button>
+                                    <button class="action-btn" onclick="toggleMoreOptions(event)">
+                                        <i class="fa-solid fa-ellipsis"></i>
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="description-box" id="descriptionBox">
+                                <span class="desc-views" id="descViews">0 views</span>
+                                <span class="desc-date" id="descDate">Just now</span>
+                                <div class="desc-text" id="descText">Description goes here...</div>
+                            </div>
+
+                            <!-- Comments Section -->
+                            <div class="comments-section">
+                                <h3 class="comments-header">Comments <span class="comments-count">128</span></h3>
+                                <div class="add-comment">
+                                    <div class="comment-avatar">Y</div>
+                                    <input type="text" placeholder="Add a comment..." disabled>
+                                </div>
+                                <div class="comment-list">
+                                    <!-- Static Example Comment -->
+                                    <div class="comment-item">
+                                        <div class="comment-avatar" style="background: #a55;">A</div>
+                                        <div class="comment-body">
+                                            <div class="comment-header">
+                                                <span class="comment-author">Alice</span>
+                                                <span class="comment-time">2 hours ago</span>
+                                            </div>
+                                            <div class="comment-text">This is a great video! Thanks for sharing.</div>
+                                            <div class="comment-actions">
+                                                <i class="fa-regular fa-thumbs-up"></i> 12
+                                                <i class="fa-regular fa-thumbs-down"></i>
+                                                <span>Reply</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="comment-item">
+                                        <div class="comment-avatar" style="background: #55a;">B</div>
+                                        <div class="comment-body">
+                                            <div class="comment-header">
+                                                <span class="comment-author">Bob</span>
+                                                <span class="comment-time">5 hours ago</span>
+                                            </div>
+                                            <div class="comment-text">Amazing quality, love the 4K downloader feature.
+                                            </div>
+                                            <div class="comment-actions">
+                                                <i class="fa-regular fa-thumbs-up"></i> 5
+                                                <i class="fa-regular fa-thumbs-down"></i>
+                                                <span>Reply</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress Area for Active Download (Hidden usually) -->
+                        <div id="statusArea" class="status-area hidden">
+                            <div class="progress-bar-bg">
+                                <div class="progress-bar-fill"></div>
+                            </div>
+                            <div class="status-text">
+                                <span id="statusText">Downloading...</span>
+                                <span id="statsText">-- MB/s • -- left</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Right: Suggested/Related Videos -->
+                    <div class="watch-right">
+                        <!-- Populated by JS -->
+                        <div id="recommendations" class="recommendations"></div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- NEW DOWNLOAD MODAL -->
+    <div id="downloadModalOverlay" class="modal-overlay hidden" onclick="closeDownloadModal(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Download Quality</h3>
+                <button class="close-modal-btn" onclick="closeDownloadModalForce()"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="modal-body">
+                <div class="quick-actions-section">
+                    <p class="section-label">Quick Download</p>
+                    <div id="quickActionsGrid" class="quick-actions-grid">
+                        <!-- Buttons like "4K", "1080p" go here -->
+                    </div>
+                </div>
+
+                <hr class="modal-divider">
+
+                <div class="full-list-section">
+                    <p class="section-label">All Formats</p>
+                    <div id="fullFormatList" class="full-format-list">
+                        <!-- Scrollable list -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONNECT ACCOUNT MODAL -->
+    <div id="connectModalOverlay" class="modal-overlay hidden" onclick="closeConnectModal(event)">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Connect YouTube Account</h3>
+                <button class="close-modal-btn" onclick="closeConnectModalForce()"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p style="color: #ccc; font-size: 14px; line-height: 1.5;">
+                    To get your personalized recommendations, Santube needs your browser cookies.
+                    We do not store your password.
+                </p>
+                <ol style="color: #ccc; font-size: 14px; padding-left: 20px; margin-top: 10px;">
+                    <li>Install a "Get cookies.txt" extension for Chrome/Firefox.</li>
+                    <li>Go to YouTube.com and export your cookies.</li>
+                    <li>Save the file as <b>cookiesforSantube.txt</b> in this app's folder:</li>
+                </ol>
+                <div
+                    style="background: #111; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 12px; color: #aaa; margin: 10px 0; word-break: break-all;">
+                    C:\Users\admin\Youtube Downloader\cookiesforSantube.txt
+                </div>
+                <button onclick="location.reload()"
+                    style="background: white; color: black; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: 500; margin-top: 10px; width: 100%;">
+                    I've added the file, Refresh!
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MINI PLAYER -->
+    <div id="miniPlayerContainer" class="mini-player-container">
+        <iframe id="miniPlayerFrame" src="" frameborder="0" allowfullscreen></iframe>
+        <button class="mini-player-close" onclick="closeMiniPlayer()"><i class="fa-solid fa-xmark"></i></button>
+    </div>
+
+    <!-- SHARE MODAL -->
+    <div id="shareModalOverlay" class="share-modal-overlay" onclick="closeShareModal(event)">
+        <div class="share-modal" onclick="event.stopPropagation()">
+            <div class="share-modal-header">
+                <h3>Share</h3>
+                <button class="share-modal-close" onclick="closeShareModalForce()"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="share-options">
+                <div class="share-option" onclick="shareToEmbed()">
+                    <div class="share-option-icon embed"><i class="fa-solid fa-code"></i></div>
+                    <span>Embed</span>
+                </div>
+                <div class="share-option" onclick="shareToWhatsApp()">
+                    <div class="share-option-icon whatsapp"><i class="fa-brands fa-whatsapp"></i></div>
+                    <span>WhatsApp</span>
+                </div>
+                <div class="share-option" onclick="shareToFacebook()">
+                    <div class="share-option-icon facebook"><i class="fa-brands fa-facebook-f"></i></div>
+                    <span>Facebook</span>
+                </div>
+                <div class="share-option" onclick="shareToTwitter()">
+                    <div class="share-option-icon twitter"><i class="fa-brands fa-twitter"></i></div>
+                    <span>Twitter</span>
+                </div>
+                <div class="share-option" onclick="shareToEmail()">
+                    <div class="share-option-icon email"><i class="fa-solid fa-envelope"></i></div>
+                    <span>Email</span>
+                </div>
+            </div>
+            <div class="share-link-box">
+                <input type="text" id="shareLinkInput" readonly>
+                <button onclick="copyShareLink()">Copy</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay hidden">
+        <div class="spinner"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    <script>
+        // Register Service Worker for PWA
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/static/service-worker.js')
+                    .then(reg => console.log('SW registered:', reg.scope))
+                    .catch(err => console.log('SW registration failed:', err));
+            });
+        }
+    </script>
+</body>
+
+</html>
