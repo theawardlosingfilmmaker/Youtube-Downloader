@@ -3,3 +3,5 @@
 # start/end blank = whole video. 15 s padding is added automatically.
 mnj-test-01 | 031-mera-naam-joker | https://www.youtube.com/watch?v=TRcFVvuz_6U | | | mp4 | 1080p
 mnj-test-02 | 031-mera-naam-joker | https://www.youtube.com/watch?v=TRcFVvuz_6U | | | mp3 |
+sholay-test | 000-tests | https://www.youtube.com/watch?v=RDY97iu1_q8 | 0:55 | 1:00 | mp4 | 1080p
+mnj-test-03 | 031-mera-naam-joker | https://www.youtube.com/watch?v=TRcFVvuz_6U | | | mp4 | 1080p

@@ -35,7 +35,7 @@ while IFS='|' read -r id reel url st en kind q || [ -n "${id:-}" ]; do
   free=$(python3 -c "import shutil,os;print(shutil.disk_usage(os.path.expanduser('~')).free//1048576)")
   if [ "${free:-0}" -lt $MIN_FREE_MB ]; then log "only ${free} MB free, waiting"; break; fi
   rm -f tmp/*
-  args=(--no-playlist --no-progress -o "tmp/${id}.%(ext)s")
+  args=(--no-playlist --no-progress --js-runtimes node -o "tmp/${id}.%(ext)s")   # YouTube needs a JS runtime; Termux has Node
   if [ -n "$st$en" ]; then
     s=$(secs "${st:-0}"); s=$(python3 -c "print(max(0,$s-$PAD))")
     if [ -n "$en" ]; then e=$(python3 -c "print($(secs "$en")+$PAD)"); sec="*$(hms $s)-$(hms $e)"; else sec="*$(hms $s)-inf"; fi
