@@ -32,7 +32,7 @@ while IFS='|' read -r id reel url st en kind q || [ -n "${id:-}" ]; do
   [ "$(grep -c "^$id | fail |" done.txt)" -ge 3 ] && continue      # gave up after 3 tries
   reel=$(echo "$reel"|xargs); url=$(echo "$url"|xargs); st=$(echo "$st"|xargs); en=$(echo "$en"|xargs)
   kind=$(echo "${kind:-mp4}"|xargs); q=$(echo "${q:-1080p}"|xargs); [ -z "$kind" ] && kind=mp4
-  free=$(df -m "$HOME" | awk 'NR==2{print $4}')
+  free=$(python3 -c "import shutil,os;print(shutil.disk_usage(os.path.expanduser('~')).free//1048576)")
   if [ "${free:-0}" -lt $MIN_FREE_MB ]; then log "only ${free} MB free, waiting"; break; fi
   rm -f tmp/*
   args=(--no-playlist --no-progress -o "tmp/${id}.%(ext)s")
