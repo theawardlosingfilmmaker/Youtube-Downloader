@@ -2,7 +2,7 @@
 background; nothing appears on screen).
 
   python santube_cli.py URL [--mp4|--mp3|--wav|--m4a] [--quality 4k|2k|1080p|720p]
-                         [--start 1:42:10 --end 1:42:25] [--out FOLDER] [--name NAME]
+                         [--start 1:42:10 --end 1:42:25] [--pad 15] [--out FOLDER] [--name NAME]
   python santube_cli.py --update          # update yt-dlp and ffmpeg now
   python santube_cli.py --info URL        # title, length, best quality available
 
@@ -28,6 +28,8 @@ def main():
     ap.add_argument("--end")
     ap.add_argument("--out")
     ap.add_argument("--name")
+    ap.add_argument("--pad", type=float, default=15,
+                    help="seconds kept before --start and after --end (default 15)")
     ap.add_argument("--update", action="store_true")
     ap.add_argument("--info", action="store_true")
     ap.add_argument("--no-update", action="store_true")
@@ -48,7 +50,8 @@ def main():
                               "duration": i.get("duration"), "url": i.get("webpage_url"), "heights": hs}, ensure_ascii=False))
             return
         path = core.download(a.url, kind=a.kind or "mp4", quality=a.quality, start=a.start,
-                             end=a.end, out_dir=a.out, name=a.name, auto_update=False)
+                             end=a.end, out_dir=a.out, name=a.name, auto_update=False,
+                             pad=a.pad if (a.start or a.end) else 0)
         print(json.dumps({"ok": bool(path), "file": path,
                           "bytes": os.path.getsize(path) if path and os.path.exists(path) else None},
                          ensure_ascii=False))

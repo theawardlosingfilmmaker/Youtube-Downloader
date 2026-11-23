@@ -223,12 +223,14 @@ def _to_h264(path, log=None):
 
 
 def download(url, kind="mp4", quality="1080p", start=None, end=None, out_dir=None,
-             name=None, progress=None, log=None, auto_update=True):
+             name=None, progress=None, log=None, auto_update=True, pad=0):
     """Download a video or audio file, whole or as a clip.
 
     kind: "mp4" | "mp3" | "wav" | "m4a"
     quality: "4k" | "2k" | "1080p" | "720p" | "480p" | "best" (video only)
     start/end: clip bounds ("1:42:10", "6130", 6130.5); both optional
+    pad: extra seconds kept before start and after end (spare frames and audio
+         for the edit; the 181st Degree rule is 10-15 s each side)
     Returns the saved file's path.
     """
     if auto_update:
@@ -238,6 +240,9 @@ def download(url, kind="mp4", quality="1080p", start=None, end=None, out_dir=Non
     os.makedirs(out_dir, exist_ok=True)
     s, e = _ts(start), _ts(end)
     clip = s is not None or e is not None
+    if clip and pad:
+        s = max(0.0, (s or 0) - pad)
+        e = e + pad if e is not None else None
     stem = _safe(name) if name else "%(title).90B"
     if clip:
         stem += f"_{int(s or 0)}-{int(e) if e is not None else 'end'}s" if name else \
