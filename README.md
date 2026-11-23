@@ -1,51 +1,32 @@
-# San's YouTube Intruder
+# SanTube
 
-A premium, locally hosted YouTube Downloader built with Flask and Vanilla JS. Designed to mimic the authentic YouTube UI while offering powerful download capabilities compatible with Adobe Premiere Pro.
+San's own YouTube downloader. Two ways to use it:
 
-## Features
+1. **The SanTube page** (for San): open **SanTube** from the Desktop or Start Menu. Search or paste a link, open the video, press **Download**, and pick:
+   - **4K / 2K / Full HD / 720p MP4** (always H.264 + AAC, ready for Premiere Pro and Resolve)
+   - **Music: MP3 320** or **WAV**
+   - optional **Clip** start and end (e.g. `1:42:10` to `1:42:25`) to download only that part
+2. **Headless** (for Claude and scripts, nothing appears on screen):
+   ```
+   python santube_cli.py URL --mp4 --quality 1080p --start 1:42:10 --end 1:42:25 --out clips --name sholay_freeze
+   python santube_cli.py URL --mp3 --start 0:30 --end 1:10
+   python santube_cli.py URL --info
+   python santube_cli.py --update
+   ```
+   It prints one JSON line: `{"ok": true, "file": "...", "bytes": ...}`.
 
--   **Authentic UI**: A pixel-perfect recreation of the YouTube interface (Dark Mode).
--   **Search & Watch**: Built-in search and video player to preview content before downloading.
--   **Download Manager**: Chrome-style global download manager in the header.
--   **Format Control**: 
-    -   **4K / 2K / 1080p** Video Downloads (H.264 MP4).
-    -   **MP3** Audio Extraction.
-    -   **Smart Detection**: Only shows quality options actually available for the video.
--   **Premiere Pro Ready**: Videos are automatically transcoded to compatible codecs (AAC Audio, H.264 Video) to prevent editing software errors.
--   **One-Click Folder Access**: Open the file location instantly from the download manager.
+## Stays working by itself
 
-## Installation
+- yt-dlp (+ its YouTube helper and the deno JS runtime) is updated automatically, at most once a day.
+- ffmpeg/ffprobe are updated automatically every week (Windows). If an update fails, the old copy keeps working.
+- The server starts quietly when Windows starts and keeps running in the background. Closing the browser tab no longer stops it. Only this PC can open it (127.0.0.1).
 
-1.  **Prerequisites**:
-    -   Python 3.8+
-    -   [FFmpeg](https://ffmpeg.org/download.html) (Ensure it's added to your System PATH).
+## Install or repair
 
-2.  **Install Dependencies**:
-    ```bash
-    pip install -r requirements.txt
-    ```
+Double-click `install_santube.bat`. It creates/updates the Python environment, installs everything, updates ffmpeg, and creates the Desktop, Start Menu and start-with-Windows shortcuts.
 
-## Usage
+Downloads from the page go to `C:\Users\admin\Downloads`.
 
-### Running the App
-Double-click `start.bat` or run:
-```bash
-python app.py
-```
-The application will open in your default browser at `http://127.0.0.1:5000`.
+## Never commit
 
-### Downloading Videos
-1.  **Search** for a video using the top search bar OR paste a YouTube URL.
-2.  Open the video to view the Watch Page.
-3.  Click the **Download** button (next to the channel name).
-4.  Select your desired quality from the **Quick Actions** modal (e.g., 4K, 1080p, Audio).
-5.  Track progress in the top-right **Downloads Dropdown**.
-6.  Once finished, click the **Folder Icon** in the dropdown to find your file.
-
-## Configuration
--   Downloads are saved to: `C:\Users\admin\Downloads` (Default)
--   To change this, edit the `DOWNLOAD_FOLDER` variable in `app.py`.
-
-## Troubleshooting
--   **"File not found"**: Ensure the video finished processing (Converting...) before trying to open it.
--   **Download Fails**: Check your internet connection or if the video is region-locked.
+`cookies*.txt` (your YouTube sign-in), `ffmpeg.exe`/`ffprobe.exe` (too big for GitHub; downloaded automatically) and `venv/`. They are in `.gitignore`.

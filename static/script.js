@@ -240,7 +240,24 @@ function loadWatchPage(data, url) {
     // Populate Info
     document.getElementById('videoTitle').textContent = data.title;
     document.getElementById('ownerName').textContent = data.uploader || 'Unknown';
-    document.getElementById('ownerAvatar').textContent = (data.uploader || 'U')[0].toUpperCase(); // Placeholder
+
+    // Handle Avatar
+    const avatarContainer = document.getElementById('ownerAvatar');
+    avatarContainer.innerHTML = ''; // Clear previous
+    if (data.channel_thumbnail) {
+        const img = document.createElement('img');
+        img.src = data.channel_thumbnail;
+        img.style.width = '100%';
+        img.style.height = '100%';
+        img.style.objectFit = 'cover';
+        img.style.borderRadius = '50%';
+        avatarContainer.appendChild(img);
+        avatarContainer.style.background = 'transparent';
+    } else {
+        avatarContainer.textContent = (data.uploader || 'U')[0].toUpperCase();
+        avatarContainer.style.background = '#7e57c2'; // Reset color
+    }
+
     document.getElementById('ownerSubs').textContent = '1.2M subscribers'; // Fake for now as getting subs requires more API
 
     document.getElementById('descViews').textContent = data.view_count ? formatViews(data.view_count) + ' views' : 'Views hidden';
@@ -259,9 +276,11 @@ function loadWatchPage(data, url) {
         document.getElementById('previewPlayer').src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
         // Recommendations
         const recContainer = document.getElementById('recommendations');
-        if (data.recommendations) {
+        console.log("Processing Recommendations:", data.recommendations);
+        if (data.recommendations && data.recommendations.length > 0) {
             renderSuggestions(data.recommendations, recContainer);
         } else {
+            console.warn("No recommendations found/returned from API");
             recContainer.innerHTML = '<p style="color: #aaa; padding: 10px;">No recommendations available</p>';
         }
 
@@ -309,23 +328,31 @@ function openDownloadModal() {
     document.getElementById('quickActionsGrid').innerHTML = '';
     const formats = currentVideoInfo.formats;
 
-    // Quick Buttons Logic
-    const fmt4k = formats.find(f => f.height >= 2160);
-    if (fmt4k) createQuickBtn('4K', 'MP4', fmt4k.format_id, false);
+    // Helper: get numeric height from format object
+    const getHeight = (f) => f.height || parseInt((f.resolution || '').replace('p', '')) || 0;
 
-    const fmt1080 = formats.find(f => f.height === 1080);
-    if (fmt1080) createQuickBtn('1080p', 'MP4', fmt1080.format_id, false);
+    // Clip (optional): only download from Start to End, e.g. 1:42:10 to 1:42:25
+    const grid = document.getElementById('quickActionsGrid');
+    const clipRow = document.createElement('div');
+    clipRow.className = 'clip-row';
+    clipRow.style.cssText = 'grid-column:1/-1;display:flex;gap:8px;align-items:center;margin-bottom:6px;font-size:13px;color:#aaa';
+    clipRow.innerHTML = `Clip <input id="clipStart" placeholder="start  0:00" style="flex:1;min-width:0;padding:7px;border-radius:8px;border:1px solid #444;background:#121212;color:#fff">
+        <input id="clipEnd" placeholder="end  (blank = whole video)" style="flex:1.4;min-width:0;padding:7px;border-radius:8px;border:1px solid #444;background:#121212;color:#fff">`;
+    grid.appendChild(clipRow);
 
-    const fmt720 = formats.find(f => f.height === 720);
-    if (fmt720) createQuickBtn('720p', 'MP4', fmt720.format_id, false);
-    else createQuickBtn('Best', 'MP4', 'bestvideo+bestaudio/best', false);
-
-    createQuickBtn('Audio', 'MP3', 'audio_only', true);
+    // Quick buttons: only qualities this video actually has
+    const maxH = Math.max(0, ...formats.map(getHeight));
+    if (maxH >= 1400) createQuickBtn('4K', 'MP4', 'mp4', '4k');
+    if (maxH >= 1000) createQuickBtn('2K', 'MP4', 'mp4', '2k');
+    if (maxH >= 700) createQuickBtn('Full HD', 'MP4', 'mp4', '1080p');
+    createQuickBtn('720p', 'MP4', 'mp4', '720p');
+    createQuickBtn('Music', 'MP3 320', 'mp3', null);
+    createQuickBtn('Music', 'WAV', 'wav', null);
 
     // Full List
     const fullList = document.getElementById('fullFormatList');
     fullList.innerHTML = '';
-    const sorted = [...formats].sort((a, b) => (b.height || 0) - (a.height || 0));
+    const sorted = [...formats].sort((a, b) => getHeight(b) - getHeight(a));
 
     sorted.forEach(f => {
         const item = document.createElement('div');
@@ -335,16 +362,16 @@ function openDownloadModal() {
             <span class="list-item-text">${f.resolution || 'Unknown'} (${f.ext.toUpperCase()})</span>
             <span class="list-item-size">${size}</span>
         `;
-        item.onclick = () => triggerDownload(f.format_id, false);
+        item.onclick = () => triggerDownload('mp4', null, getHeight(f));
         fullList.appendChild(item);
     });
 }
 
-function createQuickBtn(label, sub, fid, isAudio) {
+function createQuickBtn(label, sub, kind, quality) {
     const btn = document.createElement('button');
     btn.className = 'quick-btn';
     btn.innerHTML = `<span class="quality-tag">${label}</span><span class="format-tag">${sub}</span>`;
-    btn.onclick = () => triggerDownload(fid, isAudio);
+    btn.onclick = () => triggerDownload(kind, quality);
     document.getElementById('quickActionsGrid').appendChild(btn);
 }
 
@@ -361,14 +388,11 @@ function closeDownloadModalForce() {
 // DOWNLOAD MANAGER LOGIC
 // ==========================================
 
-async function triggerDownload(formatId, isAudio) {
+async function triggerDownload(kind, quality, height) {
+    const start = (document.getElementById('clipStart') || {}).value || '';
+    const end = (document.getElementById('clipEnd') || {}).value || '';
     closeDownloadModalForce();
     showToast(); // Show "Download Started" toast
-
-    if (formatId === 'audio_only') {
-        formatId = 'bestaudio/best';
-        isAudio = true;
-    }
 
     try {
         const res = await fetch('/api/download', {
@@ -376,15 +400,17 @@ async function triggerDownload(formatId, isAudio) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 url: currentVideoInfo.url,
-                format_id: formatId,
-                is_audio: isAudio
+                kind: kind,
+                quality: quality,
+                height: height || 0,
+                start: start.trim() || null,
+                end: end.trim() || null
             })
         });
         const d = await res.json();
         if (d.download_id) {
             activeDownloads.add(d.download_id);
             updateDownloadsDropdown(); // Init entry
-            // Auto open dropdown first time? Maybe not, just badge.
         }
     } catch (e) {
         alert("Download start failed");
@@ -924,3 +950,12 @@ function clearWatchHistory() {
     localStorage.removeItem('watchHistory');
     alert('Watch history cleared!');
 }
+
+// ==========================================
+// AUTO-SHUTDOWN HEARTBEAT
+// ==========================================
+setInterval(() => {
+    fetch('/api/heartbeat', { method: 'POST' }).catch(e => {
+        // console.log("Heartbeat failed (server closed?)");
+    });
+}, 2000); // Ping every 2 seconds

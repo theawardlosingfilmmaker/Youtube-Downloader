@@ -2,7 +2,13 @@ venv/
 __pycache__/
 *.pyc
 downloads/
+clips/
 .vscode/
 santube.log
-cookies.txt
-cookiesforSantube.txt
+.santube_state.json
+_ffmpeg_update.zip
+cookies*.txt
+*.bak
+ffmpeg.exe
+ffprobe.exe
+_backup_*/

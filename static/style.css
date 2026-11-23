@@ -937,6 +937,8 @@ header {
     display: flex;
     flex-direction: column;
     gap: 8px;
+    min-height: 200px;
+    /* Ensure it takes space even if empty initially */
 }
 
 .related-placeholder {
