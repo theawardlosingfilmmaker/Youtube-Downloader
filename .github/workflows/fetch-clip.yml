@@ -1,0 +1,35 @@
+name: Fetch clip
+on:
+  workflow_dispatch:
+    inputs:
+      url: {description: "YouTube link", required: true}
+      start: {description: "Start (e.g. 1:42:10), blank = whole", required: false, default: ""}
+      end: {description: "End, blank = to the end", required: false, default: ""}
+      kind: {description: "mp4 / mp3 / wav", required: false, default: "mp4"}
+      quality: {description: "4k / 2k / 1080p / 720p / 480p", required: false, default: "1080p"}
+      pad: {description: "Spare seconds each side", required: false, default: "15"}
+      name: {description: "File name", required: false, default: "clip"}
+jobs:
+  fetch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install -q -U "yt-dlp[default]" deno
+      - name: Cookies (optional, from a spare account)
+        env: {YT_COOKIES: "${{ secrets.YT_COOKIES }}"}
+        run: if [ -n "$YT_COOKIES" ]; then printf '%s' "$YT_COOKIES" > cookies.txt; fi
+      - name: Download
+        run: |
+          mkdir -p out
+          ARGS=(--"${{ inputs.kind }}" --quality "${{ inputs.quality }}" --out out --name "${{ inputs.name }}" --pad "${{ inputs.pad }}" --no-update)
+          [ -n "${{ inputs.start }}" ] && ARGS+=(--start "${{ inputs.start }}")
+          [ -n "${{ inputs.end }}" ] && ARGS+=(--end "${{ inputs.end }}")
+          python santube_cli.py "${{ inputs.url }}" "${ARGS[@]}" | tee result.json
+          rm -f cookies.txt
+          ls -la out
+      - uses: actions/upload-artifact@v4
+        with: {name: "${{ inputs.name }}", path: out/, retention-days: 3}
