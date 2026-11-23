@@ -15,7 +15,11 @@ if [ ! -f .updated ] || [ "$(find .updated -mtime +0 2>/dev/null)" ]; then
   pip install -q -U "yt-dlp[default]" >/dev/null 2>&1 && touch .updated
 fi
 
-rclone copyto "$R/requests.txt" req.txt 2>/dev/null || { log "no requests file"; exit 0; }
+# Requests (data only): the list Claude keeps on GitHub, plus Drive's requests.txt for San's own.
+RAW="https://raw.githubusercontent.com/theawardlosingfilmmaker/Youtube-Downloader/main/phone/requests.txt"
+: > req.txt
+curl -fsSL "$RAW?$(date +%s)" >> req.txt 2>/dev/null; echo >> req.txt
+rclone cat "$R/requests.txt" >> req.txt 2>/dev/null
 rclone copyto "$R/done.txt" done.txt 2>/dev/null || : > done.txt
 secs(){ python3 -c "import sys;p=[float(x) for x in sys.argv[1].split(':')];s=0
 for x in p: s=s*60+x

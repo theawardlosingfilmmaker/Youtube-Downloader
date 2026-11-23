@@ -1,0 +1,5 @@
+# Clip requests for the phone (and SanTube). One per line:
+# id | reel folder | youtube link | start | end | mp4/mp3/wav | quality
+# start/end blank = whole video. 15 s padding is added automatically.
+mnj-test-01 | 031-mera-naam-joker | https://www.youtube.com/watch?v=TRcFVvuz_6U | | | mp4 | 1080p
+mnj-test-02 | 031-mera-naam-joker | https://www.youtube.com/watch?v=TRcFVvuz_6U | | | mp3 |
